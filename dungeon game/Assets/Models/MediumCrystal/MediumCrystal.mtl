@@ -1,0 +1,20 @@
+newmtl Invisipart2Mtl
+Material Color
+Ka 0.0179364 0.940601 0.383775
+Kd 0.0179364 0.940601 0.383775
+Ks 0.016389 0.859451 0.350665 
+
+d 1
+
+Ns 0
+
+newmtl Invisipart1Mtl
+Material Color
+Ka 0.176774 1 0.612066
+Kd 0.176774 1 0.612066
+Ks 0.071403 0.403922 0.247227 
+
+d 1
+
+Ns 0
+

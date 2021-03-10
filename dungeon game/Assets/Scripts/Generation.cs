@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class Generation : MonoBehaviour
 {
@@ -206,6 +207,30 @@ public class Generation : MonoBehaviour
             }else{
                 Destroy(moss.gameObject);
             }
+            var crystal = obj.transform.Find("Decorations").Find("Crystals");
+            if(!hasFountain && tile.Value.GetType().ToString() != "RoomFloor" ){
+                bool hasCrystal = Random.Range(0,12) == 0;
+                if(hasCrystal){
+                    int crystalSize = Random.Range(0,100);
+                    if(crystalSize < 60){
+                        Destroy(crystal.Find("MediumCrystal").gameObject);
+                        Destroy(crystal.Find("LargeCrystal").gameObject);
+                    }else if(crystalSize >= 60 && crystalSize < 87){
+                        Destroy(crystal.Find("SmallCrystal").gameObject);
+                        Destroy(crystal.Find("LargeCrystal").gameObject);
+                    }else if(crystalSize >= 87){
+                        Destroy(crystal.Find("SmallCrystal").gameObject);
+                        Destroy(crystal.Find("MediumCrystal").gameObject);
+                    }
+                    int rotation = Random.Range(0,4)*90;
+                    crystal.rotation = Quaternion.Euler(0,rotation,0);
+                }else{
+                Destroy(crystal.gameObject);
+            }
+            }else{
+                Destroy(crystal.gameObject);
+            }
+
             var wall = obj.transform.Find("Decorations").Find("Wall");
             var door = obj.transform.Find("Decorations").Find("Door");
             if(tile.Value.GetType().ToString() == "RoomFloor"){
@@ -229,6 +254,8 @@ public class Generation : MonoBehaviour
             }
             Destroy(wall.gameObject);
             Destroy(door.gameObject);
+
+            obj.GetComponentInChildren<NavMeshSurface>().BuildNavMesh();
         }
     }
 
@@ -256,6 +283,11 @@ public class Generation : MonoBehaviour
         GeneratePaths();
         //SetupPaths();
         SetupDecorations();
+
+        NavMeshHit myNavHit;
+        if(NavMesh.SamplePosition(new Vector3(0,0,0), out myNavHit,100, -1)){
+            transform.position = myNavHit.position;
+        }
     }
 
 }
