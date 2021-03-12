@@ -4,9 +4,10 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.UI;
 
+
+//script for everythign player
 public class Player : MonoBehaviour
 {
-    // Start is called before the first frame update
     public Transform cam;
     public float speed = 3;
     public Transform swordHinge;
@@ -14,7 +15,7 @@ public class Player : MonoBehaviour
     public GameObject sword;
     public float damage;
 
-    enum State{
+    public enum State{
         Walking,
         Slamming,
         Dashing,
@@ -45,10 +46,12 @@ public class Player : MonoBehaviour
     public LayerMask raycastLayerMask;
     List<Vector3> lastPos =  new List<Vector3>();
 
-    State currentState = State.Walking;
+    public State currentState = State.Walking;
 
     Generation generation;
 
+    //wait a frame for unneeded Game object to delete itself
+    //load and assigin all stats.
     IEnumerator Start(){
         yield return new WaitForEndOfFrame();
         var stats = GameObject.FindObjectOfType<Game>().stats;
@@ -59,6 +62,7 @@ public class Player : MonoBehaviour
         generation = GameObject.FindObjectOfType<Generation>();
     }
 
+    //when the sword hit something, check if it still exists and send over that it Hit that;
     public void onSwordHit(Collider other){
         if(other == null){
             swordHitbox.GetComponentInChildren<OnSwordHit>().colliding.Remove(other);
@@ -69,7 +73,6 @@ public class Player : MonoBehaviour
                 if(other.gameObject.tag == "Crystal"){
                     other.GetComponent<Crystal>().Hit();
                 }else if(other.gameObject.GetComponent<Enemy>()){
-                    print("HitEnemy");
                     var enemy = other.gameObject.GetComponent<Enemy>();
                     enemy.health -= damage;
                     enemy.switchState(Enemy.stateEnum.Hit);
@@ -78,10 +81,12 @@ public class Player : MonoBehaviour
         }
     }
 
+    //when the enemy hits me :(
     public void GetHit(){
         SwitchState(State.Hurting);
     }
 
+    //when you fall into le water
     IEnumerator onFall(){
         sword.SetActive(false);
         yield return new WaitForSeconds(.2f);
@@ -90,6 +95,8 @@ public class Player : MonoBehaviour
         SwitchState(State.Hurting);
     }
 
+    //raycast down every frame to store the position in a list, and remove the last one if its long enough.
+    //checks if ur position is on floor
     void FallCheck(){
         RaycastHit hit;
         if (Physics.Raycast(transform.position, transform.TransformDirection(-Vector3.up), out hit, Mathf.Infinity,raycastLayerMask))
@@ -105,7 +112,8 @@ public class Player : MonoBehaviour
         }
     }
 
-    void SwitchState(State newState){
+    //normal generic switchstate function
+    public void SwitchState(State newState){
         switch(newState){
             case State.Slamming:
                 OnSlam();
@@ -116,10 +124,17 @@ public class Player : MonoBehaviour
             case State.Hurting:
                 OnHurt();
             break;
+            case State.Dying:
+                OnDeath();
+            break;
         }
         currentState = newState;
     }
 
+    //When state is switched to slam.
+    //calculate and store angle.
+    //differentiate what side you slash and sets rotation.
+    //enabled trail
     void OnSlam(){
         UnityEngine.Camera camera = cam.GetComponent<UnityEngine.Camera>();
         Vector3 plrPos = camera.WorldToScreenPoint(transform.position);
@@ -136,6 +151,7 @@ public class Player : MonoBehaviour
         slamProgress = 0;
     }
 
+    //checks and stores the angle to dash
     void OnDash(){
         Vector3 Movement = Vector3.zero;
 
@@ -145,7 +161,7 @@ public class Player : MonoBehaviour
         Movement = -transform.forward * xSpeed;
         Movement += transform.right * zSpeed;
 
-        if(Movement == Vector3.zero){
+        if(xSpeed == 0 && zSpeed == 0){
             SwitchState(State.Walking);
             return;
         }
@@ -155,10 +171,22 @@ public class Player : MonoBehaviour
         DashAngle = Movement;
     }
 
+    //On Hurt :(
     void OnHurt(){
         hurtProgress = 0;
     }
 
+    //On DEATH, freeze rigidbody so I dont get pushed, make sword fall in pieces
+    void OnDeath(){
+        foreach(Transform child in sword.transform){
+            child.gameObject.AddComponent<BoxCollider>();
+            child.gameObject.AddComponent<Rigidbody>();
+        }
+        GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
+    }
+
+    //on walk, check for falling.
+    // apply velocity and make sword sway depending on angle.
     void WalkUpdate(){
         Vector3 Movement = Vector3.zero;
 
@@ -177,6 +205,7 @@ public class Player : MonoBehaviour
         FallCheck();
     }
 
+    //when you be slamming, rotate the sword and stop when far enough
     void SlamUpdate(){
         if(slamProgress == 0){
             foreach(Collider other in swordHitbox.GetComponentInChildren<OnSwordHit>().colliding){
@@ -199,6 +228,7 @@ public class Player : MonoBehaviour
             swordHinge.GetComponentInChildren<TrailRenderer>().emitting = false;
     }
 
+    //when you be dashing, sets velocity to desired, stops when dashed for long enough
     void DashUpdate(){
         var rigidbody = GetComponent<Rigidbody>();
         rigidbody.velocity = DashAngle * dashStrength;
@@ -213,6 +243,7 @@ public class Player : MonoBehaviour
         }
     }
 
+    //flickers sword to signify invincibility frames and that ur hurt
     void HurtUpdate(){
         hurtProgress += Time.deltaTime;
         if(hurtProgress % .2f < .1){
@@ -226,9 +257,11 @@ public class Player : MonoBehaviour
         }
         WalkUpdate();
     }
+
     // Update is called once per frame
     void Update()
     {
+        //does desired state function
         switch(currentState){
             case State.Walking:
                 WalkUpdate();
@@ -243,33 +276,47 @@ public class Player : MonoBehaviour
                 HurtUpdate();
             break;
         }
+
+        //if ur clicking, and you can slam, slam
         if(Input.GetKeyDown(KeyCode.Mouse0) && slamProgress >= slamCD && currentState == State.Walking){
             SwitchState(State.Slamming);
         }else if(slamProgress < slamCD){
             slamProgress += Time.deltaTime;
         }
-        if(Input.GetKeyDown(KeyCode.Space) && dashCDTimer >= dashCD && currentState == State.Walking){
+
+        //if ur holding space, and u can dash, dash
+        if(Input.GetKey(KeyCode.Space) && dashCDTimer >= dashCD && currentState == State.Walking){
             SwitchState(State.Dashing);
         }else if(dashCDTimer < dashCD){
             dashCDTimer += Time.deltaTime;
         }
+        
+        //if u pressed escape, pause game
+        if(Input.GetKeyDown(KeyCode.Escape)){
+            GameObject.FindObjectOfType<EscMenu>().OnEsc();
+        }
+
+        //Check voor summoning
+        //there is 200% a better way to do this
         foreach(Room room in generation.rooms.Values){
-            if(room.type == "Spawn" || room.active) continue;
+            if(room.type == "Spawn" || (room.active && room.bossDefeated == false)) continue;
             var obj = room.summoner;
-            if(Vector3.Distance(obj.transform.position,transform.position) < 0.75f){
-                obj.GetComponentInChildren<Canvas>().enabled = true;
+            var canvas = obj.GetComponentInChildren<Canvas>();
+            var slider = obj.GetComponentInChildren<Slider>();
+            if(Vector3.Distance(obj.transform.position,transform.position) < 0.9f){
+                canvas.enabled = true;
                 if(Input.GetKey(KeyCode.E)){
-                    obj.GetComponentInChildren<Slider>().value += 0.01f;
-                    if(obj.GetComponentInChildren<Slider>().value >= 1){
+                    slider.value += 0.01f;
+                    if(slider.value >= 1){
                         room.ActivateSummoner(GameObject.FindObjectOfType<Game>());
-                        obj.GetComponentInChildren<Canvas>().enabled = false;
+                        canvas.enabled = false;
                     }
                 }else{
-                    obj.GetComponentInChildren<Slider>().value = 0;
+                    slider.value = 0;
                 }
             }else{
-                obj.GetComponentInChildren<Canvas>().enabled = false;
-                obj.GetComponentInChildren<Slider>().value = 0;
+                canvas.enabled = false;
+                slider.value = 0;
             }
         }
     }

@@ -27,7 +27,6 @@ public class Enemy : MonoBehaviour
         get{return _health;}
         set{
             _health = value;
-            print(_health);
             if(value <= 0){
                 GameObject.FindObjectOfType<Game>().AddCrystals(crystals);
                 Destroy(gameObject);
@@ -65,10 +64,10 @@ public class Enemy : MonoBehaviour
     void GetClosest(){
         var players = GameObject.FindObjectsOfType<Player>();
         Vector3 newClosest = transform.position;
-        float newClosestDistance = 0;
+        float newClosestDistance = Mathf.Infinity;
         foreach(Player player in players){
             float distance = Vector3.Distance(transform.position,player.transform.position);
-            if(newClosestDistance == 0 || distance < newClosestDistance){
+            if(distance < newClosestDistance){
                 newClosestDistance = distance;
                 newClosest = player.transform.position;
                 closestPlayer = player;
@@ -130,7 +129,7 @@ public class Enemy : MonoBehaviour
         if(closestDistance > loseRange)
             switchState(stateEnum.Idle);
 
-        if(closestDistance < dmgRange)
+        if(closestPlayer != null && closestDistance < dmgRange && closestPlayer.currentState == Player.State.Walking)
             switchState(stateEnum.Attack);
     }
 
@@ -155,7 +154,7 @@ public class Enemy : MonoBehaviour
     
     //wanneer de state naar hit gaat, rigidbody constraints uitzetten, agent uitzetten, velocity toepassen en hitTime resetten;
     void onHit(){
-        //agent.velocity = -transform.forward*10 + Vector3.up*200;
+        if(!gameObject) return;
         rb.constraints = RigidbodyConstraints.FreezeRotation;
         agent.isStopped = true;
         currenthitTime = hitTime;
@@ -169,11 +168,6 @@ public class Enemy : MonoBehaviour
             agent.isStopped = false;
             switchState(stateEnum.Follow);
         }
-    }
-
-    void WhenClose(){
-        if(closestDistance < dmgRange)
-            switchState(stateEnum.Attack);
     }
     //de benodigde state functies aanroepen
     void Update()

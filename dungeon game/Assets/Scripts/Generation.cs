@@ -3,22 +3,28 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
+// THE GENERATION SCRIPT
 public class Generation : MonoBehaviour
 {
     public GameObject floor;
-    Dictionary<Vector2Int,Floor> grid = new Dictionary<Vector2Int, Floor>();
+    Dictionary<Vector2Int,Floor> grid = new Dictionary<Vector2Int, Floor>(); //existing tiles
 
-    public Dictionary<Vector2Int,Room> rooms = new Dictionary<Vector2Int, Room>();
-    public Vector2Int gridSize;
+    public Dictionary<Vector2Int,Room> rooms = new Dictionary<Vector2Int, Room>(); //existing rooms
+    public Vector2Int gridSize; //grid size
 
-    public GameObject summoner;
+    public GameObject summoner; //summoner object
 
-    public Transform floorParent;
+    public Transform floorParent;// object for floor to parent to
+
+    public Material transBrick;//material for transparent wall
+
+
     void Start()
     {
         AllocateRooms();
     }
 
+    //check if room overlaps something
     bool RoomOverlapping(Vector2Int X, Vector2Int Y){
         for(int i = X.x; i <= X.y;i++){
             for(int j = Y.x; j <= Y.y;j++){
@@ -29,6 +35,7 @@ public class Generation : MonoBehaviour
         return false;
     }
 
+    //if you can place a tile there
     bool CanPlaceTile(Vector2Int tile,Dictionary<Vector2Int,Floor> blacklist){
         for(int i = -1; i <= 1; i++){
             for(int j = -1; j <= 1; j++){
@@ -42,6 +49,7 @@ public class Generation : MonoBehaviour
         return true;
     }
 
+    //get the room by whether or not that tile is in a room
     Room GetRoomByTile(Vector2Int tile){
         foreach(Room room in rooms.Values){
             if(room.roomGrid.ContainsKey(tile))
@@ -50,31 +58,41 @@ public class Generation : MonoBehaviour
         return null;
     }
 
+    //check if a floor tile is next to a room
     bool IsConnectedToRoom(Vector2Int tile,Room room){
         if(room.roomGrid.ContainsKey(tile))
             return false;
         for(int i = -1; i <= 1; i++){
             for(int j = -1; j <= 1; j++){
                 if(Mathf.Abs(i+j) == 1){
-                    if(room.roomGrid.ContainsKey(new Vector2Int(tile.x + i, tile.y + j)))
-                    return true;
+                    if(room.roomGrid.ContainsKey(new Vector2Int(tile.x + i, tile.y + j))){
+                        return true;
+                    }
                 }
             }
         }
         return false;
     }
 
+    //place the roomTiles
     void AllocateRoomTiles(Room room){
         for(int i = 0; i < room.size.x;i++){
             for(int j = 0; j < room.size.y;j++){
                 RoomFloor newFloor = new RoomFloor(new Vector2Int(room.tile.x + i, room.tile.y + j),Instantiate(floor, new Vector3((room.tile.x + i)*2,0,(room.tile.y + j)*2),Quaternion.identity));
                 room.roomGrid.Add(newFloor.tile,newFloor);
                 grid.Add(newFloor.tile,newFloor);
-                //newFloor.floor.transform.localScale += new Vector3(0,1,0);
             }
         }
     }
 
+    //generate a path
+    //I loop through every room to generate a path towards the spawn room
+    //First I check what directions it needs to go then select a random direction
+    //When placing a tile I check for 2 things
+    //1. is it next to a room and was a previous one also?
+    // if so I delete the previous one. this way rooms stay more off-path
+    //2. is it next to a different tile?
+    //if it is, I place the tile then break. it made a path thats connected to a different path
     void GeneratePaths(){
         foreach(Room room in rooms.Values){
             if(!room.hasPath){
@@ -94,6 +112,7 @@ public class Generation : MonoBehaviour
                     int ydir = 0;
                     int xdis = Mathf.Abs(current.x - closest.x);
                     int ydis = Mathf.Abs(current.y - closest.y);
+                    //get the values and choose a random one
                     if((Random.Range(0,2) == 0 && xdis != 0) || ydis == 0){
                         xdir = 1;
                         if(current.x > closest.x){
@@ -105,6 +124,7 @@ public class Generation : MonoBehaviour
                             ydir = -1;
                         }
                     }
+                    //place tile maybe?
                     var newCurrent = current + new Vector2Int(xdir,ydir);
                     if(CanPlaceTile(newCurrent,placedTiles)){
                         if(!grid.ContainsKey(newCurrent)){
@@ -118,6 +138,7 @@ public class Generation : MonoBehaviour
                             }
                         }
                         current = newCurrent;
+                        //place tile and break;
                     }else if(!grid.ContainsKey(newCurrent)){
                         Floor newFloor = new Floor(newCurrent,Instantiate(floor, new Vector3(newCurrent.x*2,0,newCurrent.y*2),Quaternion.identity));
                         grid.Add(newCurrent,newFloor);
@@ -131,54 +152,7 @@ public class Generation : MonoBehaviour
         }
     }
 
-    void SetupPaths(){
-        foreach(KeyValuePair<Vector2Int,Floor> tile in grid){
-            if(tile.Value.GetType().ToString() == "RoomFloor"){
-                foreach(Transform child in tile.Value.floor.transform){
-                    child.GetComponent<MeshRenderer>().enabled = true;
-                    child.GetComponent<BoxCollider>().enabled = true;
-                }
-                continue;
-            }
-            for(int i = -1; i <= 1; i++){
-                for(int j = -1; j <=1;j++){
-                    if(Mathf.Abs(i-j) == 1){
-                        if(grid.ContainsKey(tile.Key + new Vector2Int(i,j))){
-                            var side = tile.Value.floor.transform.Find(i + "," + j);
-                            side.GetComponent<MeshRenderer>().enabled = true;
-                            side.GetComponent<BoxCollider>().enabled = true;
-                        }
-                        
-                    }
-                }
-            }//1,1
-            if(grid.ContainsKey(tile.Key + new Vector2Int(1,1)) && grid.ContainsKey(tile.Key + new Vector2Int(0,1)) && grid.ContainsKey(tile.Key + new Vector2Int(1,0))){
-                var side = tile.Value.floor.transform.Find(1 + "," + 1);
-                side.GetComponent<MeshRenderer>().enabled = true;
-                side.GetComponent<BoxCollider>().enabled = true;
-            }//-1,-1
-            if(grid.ContainsKey(tile.Key + new Vector2Int(-1,-1)) && grid.ContainsKey(tile.Key + new Vector2Int(0,-1)) && grid.ContainsKey(tile.Key + new Vector2Int(-1,0))){
-                var side = tile.Value.floor.transform.Find(-1 + "," + -1);
-                side.GetComponent<MeshRenderer>().enabled = true;
-                side.GetComponent<BoxCollider>().enabled = true;
-            }//1,-1
-            if(grid.ContainsKey(tile.Key + new Vector2Int(1,-1)) && grid.ContainsKey(tile.Key + new Vector2Int(0,-1)) && grid.ContainsKey(tile.Key + new Vector2Int(1,0))){
-                var side = tile.Value.floor.transform.Find(1 + "," + -1);
-                side.GetComponent<MeshRenderer>().enabled = true;
-                side.GetComponent<BoxCollider>().enabled = true;
-            }//-1,1
-            if(grid.ContainsKey(tile.Key + new Vector2Int(-1,1)) && grid.ContainsKey(tile.Key + new Vector2Int(0,1)) && grid.ContainsKey(tile.Key + new Vector2Int(-1,0))){
-                var side = tile.Value.floor.transform.Find(-1 + "," + 1);
-                side.GetComponent<MeshRenderer>().enabled = true;
-                side.GetComponent<BoxCollider>().enabled = true;
-            }
-            foreach(Transform child in tile.Value.floor.transform){
-                if(child.GetComponent<MeshRenderer>().enabled == false)
-                    Destroy(child.gameObject);
-            }
-        }
-    }
-
+    //setup decoration, it first makes a bool using Random.Range to see whether or not to do it. then either does it or dont
     void SetupDecorations(){
         foreach(KeyValuePair<Vector2Int,Floor> tile in grid){
             var obj = tile.Value.floor;
@@ -235,6 +209,8 @@ public class Generation : MonoBehaviour
                 Destroy(crystal.gameObject);
             }
 
+            //Checks if its a roomfloor, if there's no tile connected to it and place a wall
+            //if there is a tile connected to it and the tile is a normal floortile, place a door
             var wall = obj.transform.Find("Decorations").Find("Wall");
             var door = obj.transform.Find("Decorations").Find("Door");
             if(tile.Value.GetType().ToString() == "RoomFloor"){
@@ -244,12 +220,18 @@ public class Generation : MonoBehaviour
                             if(!grid.ContainsKey(tile.Key + new Vector2Int(i,j))){
                                 var newWall = Instantiate(wall.gameObject,obj.transform.Find("Decorations"));
                                 newWall.transform.rotation = Quaternion.LookRotation(new Vector3(i,0,j));
+                                if(i-j == -1)
+                                newWall.GetComponentInChildren<MeshRenderer>().material = transBrick;
                             }else if(grid[tile.Key + new Vector2Int(i,j)].GetType().ToString() == "Floor"){
                                 var newDoor = Instantiate(door.gameObject,obj.transform.Find("Decorations"));
                                 newDoor.transform.rotation = Quaternion.LookRotation(new Vector3(i,0,j));
                                 Room room = GetRoomByTile(tile.Key);
                                 if(room != null){
                                     room.doors.Add(newDoor);
+                                }
+                                if(i-j == -1)
+                                foreach(MeshRenderer renderer in newDoor.GetComponentsInChildren<MeshRenderer>()){
+                                    renderer.material = transBrick;
                                 }
                             }
                         }
@@ -262,6 +244,26 @@ public class Generation : MonoBehaviour
         }
     }
 
+    //Loop through all tiles once again once the navmesh is setup to spawn enemies perhaps
+    void spawnEnemies(){
+        foreach(KeyValuePair<Vector2Int,Floor> tile in grid){
+            bool hasEnemy = Random.Range(0,9) == 0;
+            if(hasEnemy){
+                NavMeshHit closestHit;
+                if(NavMesh.SamplePosition( new Vector3(tile.Key.x*2,0.503f,tile.Key.y*2) , out closestHit, 500, 1 ) ){
+                    Enemy enemy = GameObject.FindObjectOfType<Game>().GetEnemy();
+                    var newEnemy = Instantiate(enemy);
+                    newEnemy.transform.position = closestHit.position;
+                } 
+                print(closestHit.position);
+            }
+        }
+    }
+
+    //try to create and allocate a room
+    //it has a max of 1000 tries to make sure it doesn't get in an endless loop
+    //although in theory this is bad cause there is an incredible improbable chance that it still cant place a room after 1000 tries
+    //but fuck it
     Room CreateRoom(string type,Vector2Int size){
         Vector2Int startPoint = new Vector2Int(Random.Range(0,gridSize.x),Random.Range(0,gridSize.y));
         int counter = 0;
@@ -277,13 +279,16 @@ public class Generation : MonoBehaviour
 
         if(type != "Spawn"){
             var newSummoner = Instantiate(summoner);
-            newSummoner.transform.position = new Vector3(startPoint.x*2 + size.x/2,0.503f,startPoint.y*2+ size.y/2);
+            newSummoner.transform.localPosition = new Vector3(startPoint.x*2f -1 + size.x,0.113f,startPoint.y*2 -1 + size.y);
             room.summoner = newSummoner;
         }
 
         return room;
     }
 
+    //do everything
+    //spawn 3 mini's and a spawn, generate path, spawn boss, generate path, setup decorations
+    //setup navmesh, spawn player if in dungeon scene, close boss doors, spawn enemies
     void AllocateRooms(){
         for(int i = 0; i < 3;i++){
             CreateRoom("Mini",new Vector2Int(3,3));
@@ -292,19 +297,22 @@ public class Generation : MonoBehaviour
         GeneratePaths();
         var boss = CreateRoom("Final",new Vector2Int(4,4));
         GeneratePaths();
-        //SetupPaths();
         SetupDecorations();
         floorParent.GetComponentInChildren<NavMeshSurface>().BuildNavMesh();
-        transform.GetChild(0).position = new Vector3(spawn.tile.x*2,0.765f,spawn.tile.y*2);
-        transform.GetChild(0).gameObject.SetActive(true);
-        transform.GetChild(0).SetParent(null);
+        if(UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex != 0){
+            transform.GetChild(0).position = new Vector3(spawn.tile.x*2,0.765f,spawn.tile.y*2);
+            transform.GetChild(0).gameObject.SetActive(true);
+            transform.GetChild(0).SetParent(null);
+        }
         foreach(GameObject door in boss.doors){
             StartCoroutine(GameObject.FindObjectOfType<Game>().letsgo(door.transform.Find("Cube"),door.transform.Find("DoorGoal").position));
         }
+        spawnEnemies();
     }
 
 }
 
+//class for the room
 public class Room{
     public string type;
     public Vector2Int size;
@@ -314,6 +322,7 @@ public class Room{
     
     public GameObject summoner;
     public bool active = false;
+    public bool bossDefeated = false;
 
     public bool hasPath = false;
     public Room(Vector2Int _tile,string _type, Vector2Int _size){
@@ -323,12 +332,16 @@ public class Room{
     }
 
     public void ActivateSummoner(Game game){
-        Debug.Log("Summoner Activated");
-        active = true;
+        if(bossDefeated){
+            game.End();
+        }else{
+            active = true;
             game.ActivateSummoner(this);
+        }
     }
 }
 
+//class for the FLoor
 public class Floor{
     public GameObject floor;
     public Vector2Int tile;
@@ -339,6 +352,7 @@ public class Floor{
     public Floor(){}
 }
 
+//class for the roomfloor to differentiate tiles
 public class RoomFloor : Floor{
 
     public RoomFloor(Vector2Int _tile, GameObject _floor){

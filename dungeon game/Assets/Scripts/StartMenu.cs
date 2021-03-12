@@ -4,6 +4,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+//script for the sart menu
 public class StartMenu : MonoBehaviour
 {
     public GameObject Main;
@@ -14,15 +15,18 @@ public class StartMenu : MonoBehaviour
         Game = GameObject.FindObjectOfType<Game>().gameObject;
     }
 
+    //switch to saves screen
     public void onStart(){
         Main.SetActive(false);
         Saves.SetActive(true);
     }
 
+    //quit game
     public void Quit(){
         Application.Quit();
     }
 
+    //load the save
     public void LoadSave(int save){
         string fullPath = "";
         if(Application.isEditor){
@@ -55,11 +59,14 @@ public class StartMenu : MonoBehaviour
             reader.Close();
             reader.Dispose();
         }
+        //set game object on dontdestroy so stats stay over scenes, set the selectedsave as the correct save slot
+        //loads scene
         DontDestroyOnLoad(Game);
         Game.GetComponent<Game>().stats.selectedSave = save;
         SceneManager.LoadScene(1);
     }
 
+    // go back to main menu
     public void Back(){
         Saves.SetActive(false);
         Main.SetActive(true);

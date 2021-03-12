@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using System.IO;
 using UnityEngine.SceneManagement;
 
+//script for the upgrade ui on the upgrade menu
 public class UpgradeUI : MonoBehaviour
 {
     public Text speedCur;
@@ -23,10 +24,12 @@ public class UpgradeUI : MonoBehaviour
     string costText = "Upgrade for ";
     string costText2 = " Crystals";
 
+    //returns the number with 3 decimals max
     string Floor(float nr){
         return (Mathf.Floor(nr*1000)/1000).ToString();
     }
 
+    //setup the values based on stats
     void SetupValues(){
         var stats = GameObject.FindObjectOfType<Game>().stats;
         speedCur.text = curText + Floor(stats.Speed);
@@ -42,13 +45,14 @@ public class UpgradeUI : MonoBehaviour
         crystals.text = stats.Crystals.ToString();
     }
 
-    // Start is called before the first frame update
+    //wait 1 frame so the unneeded Game object can delete itself
     IEnumerator Start()
     {
         yield return new WaitForEndOfFrame();
         SetupValues();
     }
 
+    //if speed is upgraded
     public void SpeedUpgrade(){
         var stats = GameObject.FindObjectOfType<Game>().stats;
         if(stats.Crystals < stats.SpeedCost){
@@ -65,6 +69,7 @@ public class UpgradeUI : MonoBehaviour
 
     }
 
+    //if Damage is upgraded
     public void DamageUpgrade(){
         var stats = GameObject.FindObjectOfType<Game>().stats;
         if(stats.Crystals < stats.DamageCost){
@@ -80,6 +85,7 @@ public class UpgradeUI : MonoBehaviour
         crystals.text = stats.Crystals.ToString();
     }
 
+    //if Dash is upgraded
     public void DashUpgrade(){
         var stats = GameObject.FindObjectOfType<Game>().stats;
         if(stats.Crystals < stats.DashCDCost){
@@ -95,6 +101,7 @@ public class UpgradeUI : MonoBehaviour
         crystals.text = stats.Crystals.ToString();
     }
 
+    //if slam is upgraded
     public void SlamUpgrade(){
         var stats = GameObject.FindObjectOfType<Game>().stats;
         if(stats.Crystals < stats.SlamCDCost){
@@ -103,13 +110,14 @@ public class UpgradeUI : MonoBehaviour
         stats.Crystals -= stats.SlamCDCost;
         stats.SlamCD -= stats.SlamCDStep;
         stats.SlamCDStep *= stats.SlamCDMultiplier;
-        stats.SlamCDCost = (int)(stats.DashCDCost * stats.CostMultiplier);
+        stats.SlamCDCost = (int)(stats.SlamCDCost * stats.CostMultiplier);
 
         slamCur.text = curText + Floor(stats.SlamCD);
         slamCost.text = costText + stats.SlamCDCost + costText2;
         crystals.text = stats.Crystals.ToString();
     }
 
+    //if back/play is pressed, to save
     void Save(){
         var stats = GameObject.FindObjectOfType<Game>().stats;
         string fullPath = "";
@@ -121,17 +129,24 @@ public class UpgradeUI : MonoBehaviour
             fullPath = Application.persistentDataPath + "/Save" + stats.selectedSave + ".txt";
         }
         string content = JsonUtility.ToJson(stats);
-        StreamWriter writer = new StreamWriter(fullPath,true);
+        FileStream file = File.Open(fullPath,FileMode.Create);
+        StreamWriter writer = new StreamWriter(file);
         writer.Write(content);
         writer.Close();
+        file.Close();
     }
 
+    //on play
     public void Play(){
         Save();
+        var stats = GameObject.FindObjectOfType<Game>().stats;
+        GameObject.FindObjectOfType<Game>().SetCrystals(stats.Crystals);
         GameObject.FindObjectOfType<Game>().canvas.SetActive(true);
         SceneManager.LoadScene(2);
     }
+    //on back
     public void Back(){
+        Save();
         SceneManager.LoadScene(0);
         Destroy(GameObject.FindObjectOfType<Game>().gameObject);
     }

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+//The breakable crystal
 public class Crystal : MonoBehaviour
 {
     public enum size{
@@ -11,6 +12,8 @@ public class Crystal : MonoBehaviour
     }
 
     public size crystalSize;
+
+    //Materials to replace the normal ones with.
     [Header("Materials")]
     public Material topCracked;
     public Material sideCracked;
@@ -18,7 +21,7 @@ public class Crystal : MonoBehaviour
     int crystals;
     int hit = 0;
 
-    // Start is called before the first frame update
+    //Set how many crystals it should give when broken
     void Start()
     {
         switch(crystalSize){
@@ -34,7 +37,8 @@ public class Crystal : MonoBehaviour
         }
     }
 
-    IEnumerator BreakOld(){
+    //Decreases the size of the crystal for funky effect
+    IEnumerator Resize(){
         while(true){
                 transform.localScale = transform.localScale * .95f;
                 if(transform.localScale.x <= 0.0035) break;
@@ -43,20 +47,22 @@ public class Crystal : MonoBehaviour
         Destroy(gameObject);
     }
     
+    //Gives ~50% of children a rigidbody and boxcollider so they break
     IEnumerator Break(){
         foreach(Transform child in transform){
             if(Random.Range(0,2) == 0){
-            child.gameObject.AddComponent<Rigidbody>();
-            var collider = child.gameObject.AddComponent<BoxCollider>();
+                child.gameObject.AddComponent<Rigidbody>();
+                var collider = child.gameObject.AddComponent<BoxCollider>();
             }else{
                 Destroy(child.gameObject);
             }
         }
         GetComponent<BoxCollider>().enabled = false;
         yield return new WaitForSeconds(1);
-        StartCoroutine(BreakOld());
+        StartCoroutine(Resize());
     }
 
+    //replaces all materials with cracked version
     void CrackTime(){
         foreach(MeshRenderer renderer in GetComponentsInChildren<MeshRenderer>()){
             if(renderer.material.name == "Top (Instance)"){
@@ -67,12 +73,14 @@ public class Crystal : MonoBehaviour
         }
     }
 
+    //cracks/breaks the crystal depending on how many hits & what size
     public void Hit(){
         hit += 1;
         switch(crystalSize){
             case size.Small:
                 if(hit == 1){
-                    GameObject.FindObjectOfType<Game>().stats.Crystals += crystals;
+                    CrackTime();
+                    GameObject.FindObjectOfType<Game>().AddCrystals(crystals);
                     StartCoroutine(Break());
                 }
             break;
@@ -80,7 +88,7 @@ public class Crystal : MonoBehaviour
                 if(hit == 1){
                     CrackTime();
                 }else if(hit == 2){
-                    GameObject.FindObjectOfType<Game>().stats.Crystals += crystals;
+                    GameObject.FindObjectOfType<Game>().AddCrystals(crystals);
                     StartCoroutine(Break());
                 }
             break;
@@ -88,7 +96,7 @@ public class Crystal : MonoBehaviour
                 if(hit == 2){
                     CrackTime();
                 }else if(hit == 4){
-                    GameObject.FindObjectOfType<Game>().stats.Crystals += crystals;
+                    GameObject.FindObjectOfType<Game>().AddCrystals(crystals);
                     StartCoroutine(Break());
                 }
             break;

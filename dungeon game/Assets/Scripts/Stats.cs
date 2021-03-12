@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+//simply all the stats that need to be saved, except the multipliers
 [System.Serializable]
 public class Stats
 {
@@ -11,12 +12,8 @@ public class Stats
     public float Damage = 1;
     public float DashCD = 0.75f;
     public float SlamCD = 1.5f;
-
     public float Health = 100;
-            //GetComponent<GameUI>().SetHealth(value);
-
     public int Crystals = 0;
-            //GetComponent<GameUI>().SetCrystals(value);
 
     [Header("UpgradeStats")]
     public float SpeedStep = .1f;

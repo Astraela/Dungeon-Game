@@ -51,7 +51,7 @@ MonoBehaviour:
   attackRange: 2.5
   loseRange: 4
   dmgRange: 0.75
-  hitTime: 1
+  hitTime: 0.5
   idleTime: 3
   _health: 3
   damage: 5

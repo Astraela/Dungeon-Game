@@ -28,8 +28,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 138786637}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.31400007, y: -0.059000015, z: 0}
-  m_LocalScale: {x: 0.46652, y: 0.23952, z: 1}
+  m_LocalPosition: {x: 0.2523, y: -0.2013, z: -0}
+  m_LocalScale: {x: 0.5296472, y: 0.5241416, z: 0.90358704}
   m_Children: []
   m_Father: {fileID: 896537399}
   m_RootOrder: 0
@@ -427,7 +427,8 @@ MonoBehaviour:
   speed: 3
   swordHinge: {fileID: 4705614218113784170}
   maxSway: 20
-  sword: {fileID: 0}
+  sword: {fileID: 5588081905680107323}
+  damage: 0
   slamCD: 1.5
   swordHitbox: {fileID: 896537399}
   dashTimerLength: 0.1
@@ -436,7 +437,8 @@ MonoBehaviour:
   hurtTime: 1
   raycastLayerMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 256
+  currentState: 0
 --- !u!65 &4705614218050759786
 BoxCollider:
   m_ObjectHideFlags: 0
