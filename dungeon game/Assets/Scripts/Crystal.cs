@@ -72,7 +72,7 @@ public class Crystal : MonoBehaviour
         switch(crystalSize){
             case size.Small:
                 if(hit == 1){
-                    GameObject.FindObjectOfType<Stats>().Crystals += crystals;
+                    GameObject.FindObjectOfType<Game>().stats.Crystals += crystals;
                     StartCoroutine(Break());
                 }
             break;
@@ -80,7 +80,7 @@ public class Crystal : MonoBehaviour
                 if(hit == 1){
                     CrackTime();
                 }else if(hit == 2){
-                    GameObject.FindObjectOfType<Stats>().Crystals += crystals;
+                    GameObject.FindObjectOfType<Game>().stats.Crystals += crystals;
                     StartCoroutine(Break());
                 }
             break;
@@ -88,7 +88,7 @@ public class Crystal : MonoBehaviour
                 if(hit == 2){
                     CrackTime();
                 }else if(hit == 4){
-                    GameObject.FindObjectOfType<Stats>().Crystals += crystals;
+                    GameObject.FindObjectOfType<Game>().stats.Crystals += crystals;
                     StartCoroutine(Break());
                 }
             break;

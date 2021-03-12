@@ -8,8 +8,12 @@ public class Generation : MonoBehaviour
     public GameObject floor;
     Dictionary<Vector2Int,Floor> grid = new Dictionary<Vector2Int, Floor>();
 
-    Dictionary<Vector2Int,Room> rooms = new Dictionary<Vector2Int, Room>();
+    public Dictionary<Vector2Int,Room> rooms = new Dictionary<Vector2Int, Room>();
     public Vector2Int gridSize;
+
+    public GameObject summoner;
+
+    public Transform floorParent;
     void Start()
     {
         AllocateRooms();
@@ -243,7 +247,7 @@ public class Generation : MonoBehaviour
                             }else if(grid[tile.Key + new Vector2Int(i,j)].GetType().ToString() == "Floor"){
                                 var newDoor = Instantiate(door.gameObject,obj.transform.Find("Decorations"));
                                 newDoor.transform.rotation = Quaternion.LookRotation(new Vector3(i,0,j));
-                                Room room = GetRoomByTile(tile.Key + new Vector2Int(i,j));
+                                Room room = GetRoomByTile(tile.Key);
                                 if(room != null){
                                     room.doors.Add(newDoor);
                                 }
@@ -254,12 +258,11 @@ public class Generation : MonoBehaviour
             }
             Destroy(wall.gameObject);
             Destroy(door.gameObject);
-
-            obj.GetComponentInChildren<NavMeshSurface>().BuildNavMesh();
+            obj.transform.SetParent(floorParent);
         }
     }
 
-    void CreateRoom(string type,Vector2Int size){
+    Room CreateRoom(string type,Vector2Int size){
         Vector2Int startPoint = new Vector2Int(Random.Range(0,gridSize.x),Random.Range(0,gridSize.y));
         int counter = 0;
         while(counter < 1000 && RoomOverlapping(new Vector2Int(startPoint.x-1,startPoint.x+size.x),new Vector2Int(startPoint.y-1,startPoint.y+size.y))){
@@ -267,26 +270,36 @@ public class Generation : MonoBehaviour
             counter++;
         }
         if(counter>=1000)
-            return;
+            return null;
         Room room = new Room(startPoint,type,size);
         rooms.Add(startPoint,room);
         AllocateRoomTiles(room);
+
+        if(type != "Spawn"){
+            var newSummoner = Instantiate(summoner);
+            newSummoner.transform.position = new Vector3(startPoint.x*2 + size.x/2,0.503f,startPoint.y*2+ size.y/2);
+            room.summoner = newSummoner;
+        }
+
+        return room;
     }
 
     void AllocateRooms(){
         for(int i = 0; i < 3;i++){
             CreateRoom("Mini",new Vector2Int(3,3));
         }
-        CreateRoom("Spawn",new Vector2Int(2,2));
+        var spawn = CreateRoom("Spawn",new Vector2Int(2,2));
         GeneratePaths();
-        CreateRoom("Final",new Vector2Int(4,4));
+        var boss = CreateRoom("Final",new Vector2Int(4,4));
         GeneratePaths();
         //SetupPaths();
         SetupDecorations();
-
-        NavMeshHit myNavHit;
-        if(NavMesh.SamplePosition(new Vector3(0,0,0), out myNavHit,100, -1)){
-            transform.position = myNavHit.position;
+        floorParent.GetComponentInChildren<NavMeshSurface>().BuildNavMesh();
+        transform.GetChild(0).position = new Vector3(spawn.tile.x*2,0.765f,spawn.tile.y*2);
+        transform.GetChild(0).gameObject.SetActive(true);
+        transform.GetChild(0).SetParent(null);
+        foreach(GameObject door in boss.doors){
+            StartCoroutine(GameObject.FindObjectOfType<Game>().letsgo(door.transform.Find("Cube"),door.transform.Find("DoorGoal").position));
         }
     }
 
@@ -297,14 +310,22 @@ public class Room{
     public Vector2Int size;
     public Vector2Int tile;
     public Dictionary<Vector2Int,Floor> roomGrid = new Dictionary<Vector2Int, Floor>();
-
     public List<GameObject> doors = new List<GameObject>();
+    
+    public GameObject summoner;
+    public bool active = false;
 
     public bool hasPath = false;
     public Room(Vector2Int _tile,string _type, Vector2Int _size){
         tile = _tile;
         type = _type;
         size = _size;
+    }
+
+    public void ActivateSummoner(Game game){
+        Debug.Log("Summoner Activated");
+        active = true;
+            game.ActivateSummoner(this);
     }
 }
 

@@ -2,27 +2,35 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Stats : MonoBehaviour
+[System.Serializable]
+public class Stats
 {
+    public int selectedSave = 0;
+    [Header("Normal Stats")]
     public float Speed = 2f;
     public float Damage = 1;
     public float DashCD = 0.75f;
     public float SlamCD = 1.5f;
 
-    float _Health = 100;
-    public float Health { 
-        get{return _Health;}
-        set{_Health = value;
-            GetComponent<GameUI>().SetHealth(value);
-            }
-    }
+    public float Health = 100;
+            //GetComponent<GameUI>().SetHealth(value);
 
-    int _Crystals = 0;
-    public int Crystals { 
-        get{return _Crystals;}
-        set{_Crystals = value;
-            GetComponent<GameUI>().SetCrystals(value);
-            }
-    }
+    public int Crystals = 0;
+            //GetComponent<GameUI>().SetCrystals(value);
 
+    [Header("UpgradeStats")]
+    public float SpeedStep = .1f;
+    public int SpeedCost = 10;
+    public float SpeedMultiplier = .9f;
+    public float DamageStep = .05f;
+    public int DamageCost = 10;
+    public float DamageMultiplier = .85f;
+    public float DashCDStep = .01f;
+    public int DashCDCost = 10;
+    public float DashCDMultiplier = .7f;
+    public float SlamCDStep = .05f;
+    public int SlamCDCost = 10;
+    public float SlamCDMultiplier = .6f;
+
+    public float CostMultiplier = 1.5f;
 }

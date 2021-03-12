@@ -199,7 +199,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2297014318483621844, guid: 5526bc1b2a9f54a4e87f94ba5ab04209, type: 3}
+  - {fileID: 2100000, guid: c35014698a4c4bd4993bad6627178f8b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -424,14 +424,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cam: {fileID: 0}
-  speed: 2
+  speed: 3
   swordHinge: {fileID: 4705614218113784170}
   maxSway: 20
+  sword: {fileID: 0}
   slamCD: 1.5
   swordHitbox: {fileID: 896537399}
   dashTimerLength: 0.1
   dashCD: 0.75
   dashStrength: 15
+  hurtTime: 1
+  raycastLayerMask:
+    serializedVersion: 2
+    m_Bits: 0
 --- !u!65 &4705614218050759786
 BoxCollider:
   m_ObjectHideFlags: 0
